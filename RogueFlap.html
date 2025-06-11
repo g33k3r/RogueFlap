@@ -199,13 +199,11 @@ canvas.width = GAME_WIDTH;
 canvas.height = GAME_HEIGHT;
 
 // --- Game State & Difficulty ---
-let gameState = 'TITLE', previousGameState = 'TITLE', frame = 0, score = 0, nextPipeFrame = 0, bossFightTriggeredForScore = -1;
+let gameState = 'TITLE', previousGameState = 'TITLE', frame = 0, score = 0, coinsCollectedThisRun = 0, nextPipeFrame = 0, bossFightTriggeredForScore = -1;
 let screenShake = { intensity: 0, duration: 0 };
 let boss;
 let transitionTimer = 0;
 let audioInitialized = false;
-let saveCooldown = 0;
-let hasUnsavedProgress = false;
 
 // --- Player Stats & Upgrades ---
 const SAVE_KEY = 'rogueFlapStatsGW_v22'; 
@@ -336,6 +334,7 @@ async function initAudio() {
     Tone.Destination.mute = audioSettings.mute;
     muteBtn.textContent = audioSettings.mute ? "Unmute" : "Mute";
     audioInitialized = true;
+    updateMusicByGameState();
 }
 
 function switchMusic(theme) {
@@ -345,7 +344,7 @@ function switchMusic(theme) {
         musicFader.fade.rampTo(0, 0.5);
     } else if (theme === 'main') {
         musicFader.fade.rampTo(1, 0.5);
-        mainGain.gain.rampTo(0, 0.5);
+        mainGain.gain.rampTo(1, 0.5);
         bossGain.gain.rampTo(0, 0.5);
     } else if (theme === 'boss') {
         musicFader.fade.rampTo(1, 0.5);
@@ -354,12 +353,34 @@ function switchMusic(theme) {
     }
 }
 
+function updateMusicByGameState() {
+    if (!audioInitialized) return;
+    switch(gameState) {
+        case 'TITLE':
+        case 'UPGRADE':
+            switchMusic('title');
+            break;
+        case 'GET_READY':
+        case 'PLAYING':
+        case 'POST_BOSS_TRANSITION':
+            switchMusic('main');
+            break;
+        case 'BOSS_TRANSITION':
+        case 'BOSS':
+            switchMusic('boss');
+            break;
+        default:
+            switchMusic('title');
+            break;
+    }
+}
+
 
 // --- Event Listeners ---
 playBtn.onclick = () => { startRound(); };
 backToTitleBtn.onclick = () => {
     gameState = previousGameState;
-    if (previousGameState === 'TITLE') switchMusic('title');
+    updateMusicByGameState();
 };
 volumeSlider.oninput = () => {
     if(!audioInitialized) return;
@@ -415,7 +436,7 @@ async function handleInput(e) {
         if (isInside(x, y, buttons.start)) {
             if (stats.currentScore > 0) {
                 gameState = 'UPGRADE';
-                switchMusic('main');
+                updateMusicByGameState();
             } else {
                 startRound();
             }
@@ -732,12 +753,14 @@ class BossProjectile {
 // --- Game Logic ---
 function initiateBossTransition() {
     gameState = 'BOSS_TRANSITION';
+    updateMusicByGameState();
     bossFightTriggeredForScore = score;
     transitionTimer = 300;
 }
 
 function startBossFight() {
     gameState = 'BOSS';
+    updateMusicByGameState();
     const bossLevel = Math.floor(score / 25);
     boss = new Boss(bossLevel);
     player.bossLives = 3;
@@ -754,6 +777,7 @@ function endBossFight() {
     for(let i=0; i<200; i++) particles.push(new Particle(boss.x, boss.y, '#ff007f', Math.random() * 6, 100));
     boss = null;
     gameState = 'POST_BOSS_TRANSITION';
+    updateMusicByGameState();
     transitionTimer = 180;
     player.transitionStage = 'returning';
     player.gravityActive = false;
@@ -798,6 +822,7 @@ function handlePostBossTransitionState() {
 
     if (player.transitionStage === 'launching' && player.x > GAME_WIDTH + player.width) {
         gameState = 'UPGRADE';
+        updateMusicByGameState();
     }
 }
 
@@ -967,6 +992,7 @@ function gameOver() {
     stats.currentShieldHp = 0;
     saveStats(); 
     gameState = 'UPGRADE'; 
+    updateMusicByGameState();
     updateUpgradeUI();
     triggerScreenShake(20, 20);
     for(let i=0; i<100; i++) particles.push(new Particle(player.x, player.y, '#ff007f', Math.random() * 5, 80));
@@ -974,7 +1000,7 @@ function gameOver() {
 
 function resetGame() { 
     player = new Player(); 
-    pipes = []; collectibles = []; particles = []; playerBullets = []; missiles = []; boss = null;
+    pipes = []; collectibles = []; particles = []; floatingTexts = [];
     coinsCollectedThisRun = 0; 
     nextPipeFrame = frame + 60; 
     bossFightTriggeredForScore = -1; 
@@ -989,6 +1015,7 @@ function startRound() {
     player.shieldHp = stats.currentShieldHp;
     player.y = GAME_HEIGHT / 2 - player.height / 2;
     gameState = 'GET_READY';
+    updateMusicByGameState();
 }
 
 // --- Main Game Loop ---
@@ -1090,13 +1117,6 @@ function animate() {
     particles = particles.filter(p => p.life > 0);
     floatingTexts.forEach(t => { t.update(); t.draw(ctx); });
     floatingTexts = floatingTexts.filter(t => t.life > 0);
-    
-    if (saveCooldown > 0) {
-        saveCooldown--;
-    } else if (hasUnsavedProgress) {
-        saveStats();
-        saveCooldown = 60; 
-    }
     
     const vignetteGradient = ctx.createRadialGradient(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH/3, GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH);
     vignetteGradient.addColorStop(0, 'rgba(0,0,0,0)'); vignetteGradient.addColorStop(1, 'rgba(0,0,0,0.4)');
