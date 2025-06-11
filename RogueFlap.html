@@ -58,12 +58,12 @@
         .screen-overlay h1 {
             text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
         }
-        .upgrade-list {
-            display: flex;
-            flex-direction: column; 
+        .upgrade-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
             width: 100%;
-            max-width: 400px; 
+            max-width: 400px;
             margin-top: 1rem;
         }
         .upgrade-card {
@@ -75,6 +75,14 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+        }
+         .upgrade-card h2 {
+            font-size: 1rem;
+            line-height: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .upgrade-card p {
+            font-size: 0.75rem;
         }
         .upgrade-btn {
             background-color: transparent;
@@ -141,7 +149,7 @@
         <p class="text-sm">Last Score: <span id="last-score-val">0</span> | Current Level: <span id="current-level-val">0</span></p>
         <p class="text-md mb-2">Total Coins: <span id="total-coins-val">0</span></p>
         
-        <div class="upgrade-list">
+        <div class="upgrade-grid">
             <div class="upgrade-card">
                 <h2>💥 Laser</h2>
                 <p>Cost: <span id="laser-cost">25</span> | Level: <span id="laser-level">1</span></p>
@@ -196,6 +204,8 @@ let screenShake = { intensity: 0, duration: 0 };
 let boss;
 let transitionTimer = 0;
 let audioInitialized = false;
+let saveCooldown = 0;
+let hasUnsavedProgress = false;
 
 // --- Player Stats & Upgrades ---
 const SAVE_KEY = 'rogueFlapStatsGW_v22'; 
@@ -320,7 +330,6 @@ async function initAudio() {
     titlePlayer.start();
     mainPlayer.start();
     bossPlayer.start();
-    switchMusic('title');
     
     volumeSlider.value = (audioSettings.volume + 40) / 0.4;
     Tone.Destination.volume.value = audioSettings.volume;
@@ -336,7 +345,7 @@ function switchMusic(theme) {
         musicFader.fade.rampTo(0, 0.5);
     } else if (theme === 'main') {
         musicFader.fade.rampTo(1, 0.5);
-        mainGain.gain.rampTo(1, 0.5);
+        mainGain.gain.rampTo(0, 0.5);
         bossGain.gain.rampTo(0, 0.5);
     } else if (theme === 'boss') {
         musicFader.fade.rampTo(1, 0.5);
@@ -406,6 +415,7 @@ async function handleInput(e) {
         if (isInside(x, y, buttons.start)) {
             if (stats.currentScore > 0) {
                 gameState = 'UPGRADE';
+                switchMusic('main');
             } else {
                 startRound();
             }
@@ -953,7 +963,6 @@ function checkCollisions() {
 
 function gameOver() {
     stats.lastScore = score;
-    stats.totalCoins += coinsCollectedThisRun;
     stats.currentScore = 0;
     stats.currentShieldHp = 0;
     saveStats(); 
@@ -1081,6 +1090,13 @@ function animate() {
     particles = particles.filter(p => p.life > 0);
     floatingTexts.forEach(t => { t.update(); t.draw(ctx); });
     floatingTexts = floatingTexts.filter(t => t.life > 0);
+    
+    if (saveCooldown > 0) {
+        saveCooldown--;
+    } else if (hasUnsavedProgress) {
+        saveStats();
+        saveCooldown = 60; 
+    }
     
     const vignetteGradient = ctx.createRadialGradient(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH/3, GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH);
     vignetteGradient.addColorStop(0, 'rgba(0,0,0,0)'); vignetteGradient.addColorStop(1, 'rgba(0,0,0,0.4)');
