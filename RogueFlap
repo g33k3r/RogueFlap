@@ -53,17 +53,17 @@
         }
         #upgrade-screen {
              justify-content: flex-start;
-             padding: 2rem 1rem;
+             padding-top: 1.5rem;
         }
         .screen-overlay h1 {
             text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
         }
-        .upgrade-list {
-            display: flex;
-            flex-direction: column; 
+        .upgrade-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
             width: 100%;
-            max-width: 400px; 
+            max-width: 400px;
             margin-top: 1rem;
         }
         .upgrade-card {
@@ -76,8 +76,13 @@
             flex-direction: column;
             justify-content: space-between;
         }
-        .full-width-card {
-            grid-column: 1 / -1;
+         .upgrade-card h2 {
+            font-size: 1rem;
+            line-height: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .upgrade-card p {
+            font-size: 0.75rem;
         }
         .upgrade-btn {
             background-color: transparent;
@@ -88,8 +93,7 @@
             border-radius: 4px;
             font-size: 0.8rem;
             cursor: pointer;
-            margin-top: 1rem;
-            transition: all 0.2s;
+            margin-top: 0.5rem;
         }
         .upgrade-btn:hover:not(:disabled) {
             background-color: #0ff;
@@ -127,11 +131,11 @@
 <div id="options-screen" class="screen-overlay">
     <div>
         <h1 class="text-3xl mb-6">Options</h1>
-        <div class="upgrade-card full-width-card">
+        <div class="upgrade-card">
             <h2 class="text-xl">Music Volume</h2>
             <input type="range" id="volume-slider" min="0" max="100" value="80" class="w-full mt-2">
         </div>
-        <div class="upgrade-card full-width-card mt-4">
+        <div class="upgrade-card mt-4">
              <button id="mute-btn" class="upgrade-btn w-full">Mute</button>
         </div>
         <button id="back-to-title-btn" class="upgrade-btn">Back</button>
@@ -141,45 +145,38 @@
 <!-- Upgrade Screen -->
 <div id="upgrade-screen" class="screen-overlay">
     <div>
-        <h1 class="text-4xl mb-2">Ship Hangar</h1>
-        <p class="text-lg">Last Score: <span id="last-score-val">0</span> | Current Level: <span id="current-level-val">0</span></p>
-        <p class="text-lg mb-4">Total Coins: <span id="total-coins-val">0</span></p>
+        <h1 class="text-3xl mb-1">Ship Hangar</h1>
+        <p class="text-sm">Last Score: <span id="last-score-val">0</span> | Current Level: <span id="current-level-val">0</span></p>
+        <p class="text-md mb-2">Total Coins: <span id="total-coins-val">0</span></p>
         
-        <div class="upgrade-list">
+        <div class="upgrade-grid">
             <div class="upgrade-card">
-                <h2 class="text-xl">🚀 Flap Power</h2>
-                <p>Cost: <span id="flap-cost">10</span> | Level: <span id="flap-level">1</span></p>
-                <button id="buy-flap-btn" class="upgrade-btn">Upgrade</button>
-            </div>
-            
-            <div class="upgrade-card">
-                <h2 class="text-xl">🍃 Gravity Reduction</h2>
-                <p>Cost: <span id="gravity-cost">15</span> | Level: <span id="gravity-level">1</span></p>
-                <button id="buy-gravity-btn" class="upgrade-btn">Upgrade</button>
-            </div>
-
-            <div class="upgrade-card">
-                <h2 class="text-xl">💥 Laser Power</h2>
+                <h2>💥 Laser</h2>
                 <p>Cost: <span id="laser-cost">25</span> | Level: <span id="laser-level">1</span></p>
                 <button id="buy-laser-btn" class="upgrade-btn">Upgrade</button>
             </div>
             
             <div class="upgrade-card">
-                <h2 class="text-xl">🛰️ Missile Rate</h2>
+                <h2>🛰️ Missiles</h2>
                 <p>Cost: <span id="missile-cost">75</span> | Level: <span id="missile-level">0</span></p>
                 <button id="buy-missile-btn" class="upgrade-btn">Upgrade</button>
             </div>
             
             <div class="upgrade-card">
-                <h2 class="text-xl">💰 Coin Value</h2>
-                <p>Cost: <span id="coin-cost">50</span> | Value: <span id="coin-level">x1</span></p>
+                <h2>💰 Coins</h2>
+                <p>Cost: <span id="coin-cost">50</span> | Level: <span id="coin-level">x1</span></p>
                 <button id="buy-coin-btn" class="upgrade-btn">Upgrade</button>
             </div>
 
             <div class="upgrade-card">
-                <h2 class="text-xl">🛡️ Shield Charges</h2>
-                <p>Cost: <span id="shield-cost">25</span> | Hits: <span id="shield-level">0</span></p>
+                <h2>🛡️ Shield</h2>
+                <p>Cost: <span id="shield-cost">25</span> | Level: <span id="shield-level">0</span></p>
                 <button id="buy-shield-btn" class="upgrade-btn">Upgrade</button>
+            </div>
+             <div class="upgrade-card">
+                <h2>🧲 Magnet</h2>
+                <p>Cost: <span id="magnet-cost">100</span></p>
+                <button id="buy-magnet-btn" class="upgrade-btn">Buy</button>
             </div>
         </div>
 
@@ -202,82 +199,83 @@ canvas.width = GAME_WIDTH;
 canvas.height = GAME_HEIGHT;
 
 // --- Game State & Difficulty ---
-let gameState = 'TITLE', previousGameState = 'TITLE', frame = 0, score = 0, coinsCollectedThisRun = 0, nextPipeFrame = 0, bossFightTriggeredForScore = -1;
+let gameState = 'TITLE', previousGameState = 'TITLE', frame = 0, score = 0, nextPipeFrame = 0, bossFightTriggeredForScore = -1;
 let screenShake = { intensity: 0, duration: 0 };
 let boss;
 let transitionTimer = 0;
 let audioInitialized = false;
-let saveCooldown = 0;
-let hasUnsavedProgress = false;
 
 // --- Player Stats & Upgrades ---
-const SAVE_KEY = 'rogueFlapStatsGW_v19'; 
+const SAVE_KEY = 'rogueFlapStatsGW_v22'; 
 let stats = { 
     totalCoins: 0, 
-    flapLevel: 1, 
-    gravityLevel: 1, 
     laserLevel: 1, 
     missileLevel: 0,
     shieldLevel: 0,
     coinValueLevel: 1,
+    hasMagnet: false,
     currentScore: 0,
     currentShieldHp: 0,
     lastScore: 0,
-    get flapPower() { return 6.5 - (this.flapLevel - 1) * 0.2; },
-    get gravity() { return 0.3 + (this.gravityLevel - 1) * -0.015; },
     get laserDamage() { return 1 + (this.laserLevel - 1) * 0.5; },
-    get missileCooldownTime() { return this.missileLevel > 0 ? 90 - (this.missileLevel - 1) * 10 : Infinity; },
+    get missileCooldownTime() { return this.missileLevel > 0 ? Math.max(10, 90 - (this.missileLevel - 1) * 10) : Infinity; },
     get coinValue() { return this.coinValueLevel; }
 };
+const BASE_FLAP_POWER = 6;
+const BASE_GRAVITY = 0.3;
+
 let audioSettings = { volume: -10, mute: false };
 
 function getUpgradeCost(base, lvl) { return Math.floor(base * Math.pow(1.5, lvl - 1)); }
 function getShieldCost(lvl) { return Math.floor(25 * Math.pow(4, lvl));}
 function saveStats() { localStorage.setItem(SAVE_KEY, JSON.stringify(stats)); }
 function loadStats() { const s = localStorage.getItem(SAVE_KEY); if(s) stats = {...stats, ...JSON.parse(s)}; }
-function saveAudioSettings() { localStorage.setItem('rogueFlapAudio_v19', JSON.stringify(audioSettings)); }
-function loadAudioSettings() { const s = localStorage.getItem('rogueFlapAudio_v19'); if(s) audioSettings = {...audioSettings, ...JSON.parse(s)}; }
+function saveAudioSettings() { localStorage.setItem('rogueFlapAudio_v22', JSON.stringify(audioSettings)); }
+function loadAudioSettings() { const s = localStorage.getItem('rogueFlapAudio_v22'); if(s) audioSettings = {...audioSettings, ...JSON.parse(s)}; }
 
 
 // --- UI Elements ---
 const backToTitleBtn = document.getElementById('back-to-title-btn');
 const volumeSlider = document.getElementById('volume-slider');
 const muteBtn = document.getElementById('mute-btn');
-const playBtn = document.getElementById('play-btn'), buyFlapBtn = document.getElementById('buy-flap-btn'),
-      buyGravityBtn = document.getElementById('buy-gravity-btn'), buyLaserBtn = document.getElementById('buy-laser-btn'),
-      buyMissileBtn = document.getElementById('buy-missile-btn'), buyShieldBtn = document.getElementById('buy-shield-btn'),
-      buyCoinBtn = document.getElementById('buy-coin-btn'), shopOptionsBtn = document.getElementById('shop-options-btn');
+const playBtn = document.getElementById('play-btn'), 
+      buyLaserBtn = document.getElementById('buy-laser-btn'),
+      buyMissileBtn = document.getElementById('buy-missile-btn'),
+      buyShieldBtn = document.getElementById('buy-shield-btn'),
+      buyCoinBtn = document.getElementById('buy-coin-btn'),
+      buyMagnetBtn = document.getElementById('buy-magnet-btn'),
+      shopOptionsBtn = document.getElementById('shop-options-btn');
 
 function updateUpgradeUI() {
     document.getElementById('last-score-val').textContent = stats.lastScore;
     document.getElementById('total-coins-val').textContent = stats.totalCoins;
     document.getElementById('current-level-val').textContent = stats.currentScore;
     playBtn.textContent = stats.currentScore > 0 ? "Next Round" : "Start Run";
-    document.getElementById('flap-level').textContent = stats.flapLevel;
-    const flapCost = getUpgradeCost(10, stats.flapLevel);
-    document.getElementById('flap-cost').textContent = flapCost;
-    buyFlapBtn.disabled = stats.totalCoins < flapCost;
-    document.getElementById('gravity-level').textContent = stats.gravityLevel;
-    const gravityCost = getUpgradeCost(15, stats.gravityLevel);
-    document.getElementById('gravity-cost').textContent = gravityCost;
-    buyGravityBtn.disabled = stats.totalCoins < gravityCost;
+    
     document.getElementById('laser-level').textContent = stats.laserLevel;
     const laserCost = getUpgradeCost(25, stats.laserLevel);
     document.getElementById('laser-cost').textContent = laserCost;
     buyLaserBtn.disabled = stats.totalCoins < laserCost;
+
     document.getElementById('missile-level').textContent = stats.missileLevel;
     const missileCost = getUpgradeCost(75, stats.missileLevel + 1);
-    buyMissileBtn.textContent = stats.missileLevel === 0 ? "Buy Pods" : "Upgrade";
+    buyMissileBtn.textContent = stats.missileLevel >= 9 ? "Max Level" : "Upgrade";
     document.getElementById('missile-cost').textContent = missileCost;
-    buyMissileBtn.disabled = stats.totalCoins < missileCost;
+    buyMissileBtn.disabled = stats.totalCoins < missileCost || stats.missileLevel >= 9;
+
     document.getElementById('shield-level').textContent = stats.shieldLevel;
     const shieldCost = getShieldCost(stats.shieldLevel);
     document.getElementById('shield-cost').textContent = shieldCost;
-    buyShieldBtn.disabled = stats.totalCoins < shieldCost;
+    buyShieldBtn.textContent = stats.shieldLevel >= 5 ? "Max Level" : "Upgrade";
+    buyShieldBtn.disabled = stats.totalCoins < shieldCost || stats.shieldLevel >= 5;
+
     document.getElementById('coin-level').textContent = `x${stats.coinValue}`;
     const coinCost = getUpgradeCost(50, stats.coinValueLevel);
     document.getElementById('coin-cost').textContent = coinCost;
     buyCoinBtn.disabled = stats.totalCoins < coinCost;
+    
+    buyMagnetBtn.disabled = stats.hasMagnet || stats.totalCoins < 100;
+    buyMagnetBtn.textContent = stats.hasMagnet ? "Owned" : "Buy";
 }
 function buyUpgrade(costFunc, levelProp, effect) {
     const cost = costFunc(stats[levelProp]);
@@ -292,38 +290,48 @@ function buyUpgrade(costFunc, levelProp, effect) {
 
 
 // --- Audio Engine ---
-let music;
-function initAudio() {
+let titlePlayer, mainPlayer, bossPlayer;
+let musicFader;
+let mainGain, bossGain;
+
+if (typeof Tone !== 'undefined') {
+    Tone.context.latencyHint = 'playback';
+}
+
+async function initAudio() {
     if (audioInitialized) return;
-    const mix = new Tone.Gain().toDestination();
-    const synth = new Tone.FMSynth({ harmonicity: 3, modulationIndex: 10, detune: 0, oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.01, sustain: 1, release: 0.5 } });
-    const bassSynth = new Tone.MonoSynth({ oscillator: { type: "fmsquare" }, envelope: { attack: 0.01, release: 0.2 } });
-    const bossSynth = new Tone.DuoSynth({ vibratoAmount: 0.5, harmonicity: 1.5, voice0: { oscillator: { type: "sawtooth" } }, voice1: { oscillator: { type: "sine" } } });
-    
-    const reverb = new Tone.Reverb(0.5);
-    const delay = new Tone.FeedbackDelay("8n", 0.5);
-    
-    synth.connect(reverb);
-    bassSynth.connect(delay);
-    bossSynth.connect(delay).connect(reverb);
-    reverb.connect(mix);
-    delay.connect(mix);
-    synth.connect(mix);
-    bassSynth.connect(mix);
-    bossSynth.connect(mix);
+    if(typeof Tone === 'undefined') return;
 
-    const mainPattern = new Tone.Pattern((time, note) => { synth.triggerAttackRelease(note, "16n", time); }, ["C4", "E4", "G4", "B4", "C5", "B4", "G4", "E4"], "randomWalk").start(0);
-    const bassPattern = new Tone.Sequence((time, note) => { bassSynth.triggerAttackRelease(note, "8n", time); }, ["C2", null, "G1", null, "A1", null, "F1", null], "4n").start(0);
-    const bossPattern = new Tone.Sequence((time, note) => { bossSynth.triggerAttackRelease(note, "16n", time); }, ["C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3"], "16n").start(0);
-    
-    mainTheme = [mainPattern, bassPattern];
-    bossTheme = [bossPattern];
-    
-    mainTheme.forEach(p => p.mute = false);
-    bossTheme.forEach(p => p.mute = true);
+    await Tone.start();
+    console.log("Audio context started.");
 
-    Tone.Transport.bpm.value = 120;
+    musicFader = new Tone.CrossFade(0).toDestination();
+
+    titlePlayer = new Tone.Player({
+        url: "https://cdn.jsdelivr.net/gh/g33k3r/MyCDN@main/Echoes-of-the-Void.ogg",
+        loop: true,
+    }).connect(musicFader.a);
     
+    mainGain = new Tone.Gain(0).connect(musicFader.b);
+    bossGain = new Tone.Gain(0).connect(musicFader.b);
+
+    mainPlayer = new Tone.Player({
+        url: "https://cdn.jsdelivr.net/gh/g33k3r/MyCDN@main/Hypernova-Pulse.ogg",
+        loop: true,
+    }).connect(mainGain);
+
+    bossPlayer = new Tone.Player({
+        url: "https://cdn.jsdelivr.net/gh/g33k3r/MyCDN@main/Battle-in-the-Machine-Core.ogg",
+        loop: true,
+    }).connect(bossGain);
+    
+    await Tone.loaded();
+    console.log("All audio files loaded.");
+
+    titlePlayer.start();
+    mainPlayer.start();
+    bossPlayer.start();
+
     volumeSlider.value = (audioSettings.volume + 40) / 0.4;
     Tone.Destination.volume.value = audioSettings.volume;
     Tone.Destination.mute = audioSettings.mute;
@@ -333,14 +341,17 @@ function initAudio() {
 
 function switchMusic(theme) {
     if(!audioInitialized) return;
-    if (theme === 'boss') {
-        mainTheme.forEach(p => p.mute = true);
-        bossTheme.forEach(p => p.mute = false);
-        Tone.Transport.bpm.rampTo(160, 1);
-    } else {
-        mainTheme.forEach(p => p.mute = false);
-        bossTheme.forEach(p => p.mute = true);
-        Tone.Transport.bpm.rampTo(120, 1);
+    
+    if(theme === 'title') {
+        musicFader.fade.rampTo(0, 0.5);
+    } else if (theme === 'main') {
+        musicFader.fade.rampTo(1, 0.5);
+        mainGain.gain.rampTo(0, 0.5);
+        bossGain.gain.rampTo(0, 0.5);
+    } else if (theme === 'boss') {
+        musicFader.fade.rampTo(1, 0.5);
+        mainGain.gain.rampTo(0, 0.5);
+        bossGain.gain.rampTo(1, 0.5);
     }
 }
 
@@ -349,9 +360,10 @@ function switchMusic(theme) {
 playBtn.onclick = () => { startRound(); };
 backToTitleBtn.onclick = () => {
     gameState = previousGameState;
+    if (previousGameState === 'TITLE') switchMusic('title');
 };
 volumeSlider.oninput = () => {
-    if(!music) return;
+    if(!audioInitialized) return;
     const db = (volumeSlider.value / 100) * 40 - 40;
     Tone.Destination.volume.value = db;
     audioSettings.volume = db;
@@ -369,36 +381,39 @@ shopOptionsBtn.onclick = () => {
     previousGameState = 'UPGRADE';
     gameState = 'OPTIONS';
 };
-buyFlapBtn.onclick = () => buyUpgrade(c => getUpgradeCost(10,c), 'flapLevel', () => triggerScreenShake(3,8));
-buyGravityBtn.onclick = () => buyUpgrade(c => getUpgradeCost(15,c), 'gravityLevel', () => triggerScreenShake(3,8));
 buyLaserBtn.onclick = () => buyUpgrade(c => getUpgradeCost(25,c), 'laserLevel', () => triggerScreenShake(3,8));
 buyMissileBtn.onclick = () => buyUpgrade(c => getUpgradeCost(75, c + 1), 'missileLevel', () => triggerScreenShake(5,10));
 buyShieldBtn.onclick = () => buyUpgrade(getShieldCost, 'shieldLevel', () => triggerScreenShake(5,10));
 buyCoinBtn.onclick = () => buyUpgrade(c => getUpgradeCost(50, c), 'coinValueLevel', () => triggerScreenShake(3,8));
-canvas.addEventListener('mousedown', handleInput);
-canvas.addEventListener('touchstart', (e) => { 
-    e.preventDefault(); 
-    handleInput(e.touches[0]);
+buyMagnetBtn.onclick = () => {
+    const cost = 100;
+    if(stats.totalCoins >= cost && !stats.hasMagnet) {
+        stats.totalCoins -= cost;
+        stats.hasMagnet = true;
+        saveStats();
+        updateUpgradeUI();
+        triggerScreenShake(5, 10);
+    }
+};
+
+['mousedown', 'touchstart'].forEach(evt => {
+    canvas.addEventListener(evt, (e) => {
+        if (e.type === 'touchstart') e.preventDefault();
+        handleInput(e.type === 'touchstart' ? e.touches[0] : e);
+    });
 });
 
-function handleInput(e) {
+async function handleInput(e) {
+    if (!audioInitialized) {
+       await initAudio();
+    }
+    
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
     if (gameState === 'TITLE') {
         if (isInside(x, y, buttons.start)) {
-             try {
-                if (Tone.context.state !== 'running') {
-                    Tone.start().then(() => {
-                        if (!audioInitialized) {
-                            initAudio();
-                            Tone.Transport.start();
-                        }
-                    });
-                }
-            } catch (e) { console.error("Audio context could not be started.", e); }
-            
             if (stats.currentScore > 0) {
                 gameState = 'UPGRADE';
             } else {
@@ -408,14 +423,11 @@ function handleInput(e) {
             previousGameState = 'TITLE';
             gameState = 'OPTIONS';
         }
-    }
-    
-    if ((gameState === 'PLAYING' || gameState === 'BOSS_TRANSITION' || gameState === 'POST_BOSS_TRANSITION') && !player.gravityActive) {
+    } else if (gameState === 'GET_READY') {
+        gameState = 'PLAYING';
         player.gravityActive = true;
-        player.vy = 0;
-    }
-    
-    if (gameState === 'PLAYING' || gameState === 'BOSS_TRANSITION' || gameState === 'POST_BOSS_TRANSITION') {
+        player.flap();
+    } else if (gameState === 'PLAYING' || gameState === 'BOSS_TRANSITION') {
         player.flap();
     } else if (gameState === 'BOSS') {
         player.shoot();
@@ -424,6 +436,34 @@ function handleInput(e) {
 
 // --- Graphics & Effects Classes ---
 let particles = [];
+let floatingTexts = [];
+class FloatingText {
+    constructor(x, y, text, color) {
+        this.x = x;
+        this.y = y;
+        this.text = text;
+        this.color = color;
+        this.life = 60; 
+        this.vy = -1; 
+        this.alpha = 1;
+    }
+    update() {
+        this.y += this.vy;
+        this.life--;
+        this.alpha = Math.max(0, this.life / 60);
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.font = '12px "Press Start 2P"';
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 5;
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.restore();
+    }
+}
+
 class Particle {
     constructor(x, y, color, size, life) { this.x=x;this.y=y;this.color=color;this.size=size;this.life=life;this.initialLife=life;this.vx=(Math.random()-.5)*8;this.vy=(Math.random()-.5)*8;this.friction=.98;this.gravity=.05; }
     update() { this.vy+=this.gravity;this.vx*=this.friction;this.vy*=this.friction;this.x+=this.vx;this.y+=this.vy;this.life--; }
@@ -485,6 +525,7 @@ class Player {
     }
     update() {
         if(gameState === 'POST_BOSS_TRANSITION'){
+            this.y += this.vy;
             if(this.transitionStage === 'returning') {
                 const targetX = 60;
                 this.x += (targetX - this.x) * 0.05;
@@ -501,7 +542,7 @@ class Player {
         }
 
         if (this.gravityActive) {
-             this.vy += (gameState === 'BOSS' ? 0.1 : stats.gravity);
+             this.vy += (gameState === 'BOSS' ? 0.1 : BASE_GRAVITY);
         }
         this.y += this.vy;
         this.angle = this.vy * 0.05;
@@ -530,12 +571,20 @@ class Player {
         if(this.invincible&&Math.floor(frame/3)%2===0)return;ctx.save();ctx.translate(this.x+this.width/2,this.y+this.height/2+Math.sin(this.idleBob)*1.5);ctx.rotate(this.angle);ctx.shadowColor='#00ffff';ctx.shadowBlur=15;if(this.flapCooldown>0){const e=(this.flapCooldown/10)*18,g=ctx.createRadialGradient(0,0,0,0,0,e);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.2,'rgba(0,255,255,.7)');g.addColorStop(1,'rgba(0,255,255,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(-this.width*.7,0,e,0,Math.PI*2);ctx.fill();}
         ctx.fillStyle=this.invincible?'#ff00ff':'#00ffff';ctx.beginPath();ctx.moveTo(-this.width/2,-this.height/2);ctx.lineTo(this.width/2,0);ctx.lineTo(-this.width/2,this.height/2);ctx.closePath();ctx.fill();ctx.fillStyle='#ffffff';ctx.shadowBlur=5;ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();ctx.restore();
         if(this.shieldHp > 0){
-            for(let i=0; i < this.shieldHp; i++) {
-                 ctx.save();ctx.strokeStyle=`rgba(0,255,255,${.5+Math.sin(frame*.1 + i)*.3})`;ctx.lineWidth=2;ctx.shadowColor='#00ffff';ctx.shadowBlur=20;ctx.beginPath();ctx.arc(this.x+this.width/2,this.y+this.height/2,this.width * 0.7 + i * 4,0,Math.PI*2);ctx.stroke();ctx.restore();
-            }
+            const shieldColors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00'];
+            const color = this.shieldHp >= 5 ? `hsl(${frame * 3}, 100%, 50%)` : shieldColors[this.shieldHp - 1];
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2 + Math.sin(frame * 0.1) * 1;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width * 0.7, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
         }
     }
-    flap() { this.vy = -stats.flapPower; this.flapCooldown = 10; triggerScreenShake(2, 5); }
+    flap() { this.vy = -BASE_FLAP_POWER; this.flapCooldown = 10; triggerScreenShake(2, 5); }
     shoot() {
         if (this.shootCooldown > 0) return;
         this.vy = -4.5;
@@ -699,6 +748,7 @@ function startBossFight() {
 function endBossFight() {
     triggerScreenShake(25, 30);
     stats.currentScore = score + 1;
+    stats.totalCoins += coinsCollectedThisRun;
     stats.currentShieldHp = player.shieldHp; 
     saveStats();
     for(let i=0; i<200; i++) particles.push(new Particle(boss.x, boss.y, '#ff007f', Math.random() * 6, 100));
@@ -742,7 +792,7 @@ function handlePostBossTransitionState() {
         player.vx = 15;
         player.vy = -2;
         for(let i=0; i<100; i++) {
-            particles.push(new Particle(player.x, player.y + player.height/2, '#00ffff', Math.random()*3+1, 30));
+            particles.push(new Particle(this.x, this.y + this.height/2, '#00ffff', Math.random()*3+1, 30));
         }
     }
 
@@ -764,7 +814,7 @@ function handleBossState() {
 
     for (let i = playerBullets.length - 1; i >= 0; i--) {
         const b = playerBullets[i];
-        if (Math.hypot(b.x - boss.x, b.y - boss.y) < boss.size) {
+        if (boss && Math.hypot(b.x - boss.x, b.y - boss.y) < boss.size) {
             playerBullets.splice(i, 1);
             boss.takeDamage(stats.laserDamage);
         }
@@ -772,7 +822,7 @@ function handleBossState() {
 
     for (let i = missiles.length - 1; i >= 0; i--) {
         const m = missiles[i];
-         if (Math.hypot(m.x - boss.x, m.y - boss.y) < boss.size) {
+         if (boss && Math.hypot(m.x - boss.x, m.y - boss.y) < boss.size) {
             missiles.splice(i, 1);
             boss.takeDamage(5);
             for(let j=0; j<20; j++) particles.push(new Particle(m.x, m.y, '#ff8c00', Math.random() * 4, 30));
@@ -803,7 +853,7 @@ function handleBossState() {
 }
 
 function handlePipesAndCollectibles(isTransition = false) {
-    if (!isTransition && frame >= nextPipeFrame) {
+    if (player.gravityActive && !isTransition && frame >= nextPipeFrame) {
         const difficultyProgress = Math.min(1, score / 50);
         const gap = 180 - (180 - 120) * difficultyProgress;
         const interval = 120 - (120 - 80) * difficultyProgress;
@@ -814,7 +864,7 @@ function handlePipesAndCollectibles(isTransition = false) {
         }
         nextPipeFrame = frame + interval;
     }
-    pipes.forEach(p => { p.update(); p.draw(ctx); if (!p.counted && p.x < player.x) { score++; p.counted = true; }});
+    pipes.forEach(p => { p.update(); p.draw(ctx); if (gameState === 'PLAYING' && !p.counted && p.x < player.x) { score++; p.counted = true; }});
     pipes = pipes.filter(p => p.x + p.width > 0);
 }
 
@@ -829,8 +879,7 @@ function handleCollectiblesLogic() {
         const dist = Math.hypot(player.x + player.width/2 - c.x, player.y + player.height/2 - c.y);
         if (dist < player.width/2 + c.size + 15) {
             stats.totalCoins += stats.coinValue;
-            coinsCollectedThisRun += stats.coinValue;
-            hasUnsavedProgress = true;
+            floatingTexts.push(new FloatingText(c.x, c.y, `+${stats.coinValue}`, '#ffff00'));
             for(let j=0; j<8; j++) particles.push(new Particle(c.x, c.y, '#ffff00', Math.random() * 3, 20));
             collectibles.splice(i, 1);
         } else if (c.x + c.size < 0) { collectibles.splice(i, 1); }
@@ -851,11 +900,11 @@ function drawHud() {
             ctx.moveTo(-10,-6); ctx.lineTo(10,0); ctx.lineTo(-10,6); ctx.closePath(); ctx.fill();
             ctx.restore();
         }
-    } else if (gameState === 'PLAYING' || gameState === 'BOSS_TRANSITION' || gameState === 'POST_BOSS_TRANSITION') {
+    } else if (gameState === 'PLAYING' || gameState === 'BOSS_TRANSITION' || gameState === 'POST_BOSS_TRANSITION' || gameState === 'GET_READY') {
         ctx.save(); ctx.textAlign='center'; ctx.fillStyle='#ffffff'; ctx.shadowColor='#ffffff'; ctx.shadowBlur=10;
         let scoreX = GAME_WIDTH/2, scoreY = 60; if(Math.random()<.05){scoreX+=Math.random()*4-2;scoreY+=Math.random()*4-2;}
         ctx.font='30px "Press Start 2P"'; ctx.fillText(score,scoreX,scoreY);
-        ctx.font='15px "Press Start 2P"'; ctx.shadowBlur=5; ctx.fillText(`Coins: ${coinsCollectedThisRun}`, GAME_WIDTH/2,90);
+        ctx.font='15px "Press Start 2P"'; ctx.shadowBlur=5; ctx.fillText(`Coins: ${stats.totalCoins}`, GAME_WIDTH/2,90);
         ctx.restore();
     }
 
@@ -875,7 +924,7 @@ function drawHud() {
         ctx.font = '30px "Press Start 2P"';
         ctx.fillText('STAGE CLEARED', GAME_WIDTH / 2, GAME_HEIGHT / 2);
         ctx.restore();
-    } else if (gameState === 'PLAYING' && !player.gravityActive) {
+    } else if (gameState === 'GET_READY') {
         ctx.save();
         ctx.textAlign = 'center';
         ctx.fillStyle = `rgba(255,255,255,${Math.abs(Math.sin(frame * 0.05))})`;
@@ -939,7 +988,7 @@ function startRound() {
     score = stats.currentScore;
     player.shieldHp = stats.currentShieldHp;
     player.y = GAME_HEIGHT / 2 - player.height / 2;
-    gameState = 'PLAYING';
+    gameState = 'GET_READY';
 }
 
 // --- Main Game Loop ---
@@ -972,6 +1021,11 @@ function handleTitleState() {
     drawButton(ctx, 'Start Game', GAME_WIDTH/2, GAME_HEIGHT/2 + 50, 240, 50, 'start');
     drawButton(ctx, 'Options', GAME_WIDTH/2, GAME_HEIGHT/2 + 120, 200, 40, 'options');
     ctx.restore();
+}
+
+function handleGetReadyState() {
+    player.update();
+    player.draw(ctx);
 }
 
 function drawButton(ctx, text, x, y, width, height, key) {
@@ -1019,6 +1073,8 @@ function animate() {
     } else if (gameState === 'UPGRADE') {
         player.update();
         player.draw(ctx);
+    } else if (gameState === 'GET_READY') {
+        handleGetReadyState();
     } else if (gameState === 'PLAYING') {
         handlePlayingState();
     } else if (gameState === 'BOSS') {
@@ -1032,13 +1088,8 @@ function animate() {
     drawHud();
     particles.forEach(p => { p.update(); p.draw(ctx); });
     particles = particles.filter(p => p.life > 0);
-    
-    if (saveCooldown > 0) {
-        saveCooldown--;
-    } else if (hasUnsavedProgress) {
-        saveStats();
-        saveCooldown = 60; 
-    }
+    floatingTexts.forEach(t => { t.update(); t.draw(ctx); });
+    floatingTexts = floatingTexts.filter(t => t.life > 0);
     
     const vignetteGradient = ctx.createRadialGradient(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH/3, GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH);
     vignetteGradient.addColorStop(0, 'rgba(0,0,0,0)'); vignetteGradient.addColorStop(1, 'rgba(0,0,0,0.4)');
