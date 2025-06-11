@@ -338,18 +338,33 @@ async function initAudio() {
 }
 
 function switchMusic(theme) {
-    if(!audioInitialized) return;
-    
-    if(theme === 'title') {
+    if (!audioInitialized) return;
+
+    if (theme === 'title') {
+        if (titlePlayer.state === 'started') titlePlayer.stop();
+        titlePlayer.start();
         musicFader.fade.rampTo(0, 0.5);
-    } else if (theme === 'main') {
+        mainGain.gain.rampTo(0, 0.5);
+        bossGain.gain.rampTo(0, 0.5);
+    }
+
+    else if (theme === 'main') {
+        if (mainPlayer.state === 'started') mainPlayer.stop();
+        mainPlayer.start();
         musicFader.fade.rampTo(1, 0.5);
         mainGain.gain.rampTo(1, 0.5);
         bossGain.gain.rampTo(0, 0.5);
-    } else if (theme === 'boss') {
+        if (titlePlayer.state === 'started') titlePlayer.stop();
+    }
+
+    else if (theme === 'boss') {
+        if (bossPlayer.state === 'started') bossPlayer.stop();
+        bossPlayer.start();
+
         musicFader.fade.rampTo(1, 0.5);
         mainGain.gain.rampTo(0, 0.5);
         bossGain.gain.rampTo(1, 0.5);
+        if (titlePlayer.state === 'started') titlePlayer.stop();
     }
 }
 
