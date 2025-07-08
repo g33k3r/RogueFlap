@@ -753,7 +753,7 @@ class Boss {
     takeDamage(damage) {
         this.hp -= damage; triggerScreenShake(2, 5);
         for(let i=0; i<5; i++) particles.push(new Particle(this.x + (Math.random()-.5)*this.size*2, this.y + (Math.random()-.5)*this.size*2, '#ffffff', Math.random()*3+1, 20));
-        if (this.hp <= 0) { endBossFight(); }
+        if (this.hp <= 0) { Fight(); }
     }
 }
 
@@ -799,7 +799,7 @@ function endBossFight() {
     stats.totalCoins += 100;
     floatingTexts.push(new FloatingText(boss.x, boss.y, "+100", '#ffff00'));
     for(let i=0; i<200; i++) particles.push(new Particle(boss.x, boss.y, '#ff007f', Math.random() * 6, 100));
-    stats.currentShieldHp = player.shieldHp; 
+    // REMOVED a line here
     saveStats();
     boss = null;
     gameState = 'POST_BOSS_TRANSITION';
@@ -1036,11 +1036,8 @@ function resetGame() {
 
 function startRound() {
     resetGame();
-    if (stats.currentScore === 0) {
-        player.shieldHp = stats.shieldLevel;
-    } else {
-        player.shieldHp = stats.currentShieldHp;
-    }
+    // SIMPLIFIED the logic here
+    player.shieldHp = stats.shieldLevel;
     score = stats.currentScore;
     player.y = GAME_HEIGHT / 2 - player.height / 2;
     gameState = 'GET_READY';
