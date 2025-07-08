@@ -196,8 +196,6 @@ let screenShake = { intensity: 0, duration: 0 };
 let boss;
 let transitionTimer = 0;
 let audioInitialized = false;
-let saveCooldown = 0;
-let hasUnsavedProgress = false;
 
 // --- Player Stats & Upgrades ---
 const SAVE_KEY = 'rogueFlapStatsGW_v22'; 
@@ -209,7 +207,6 @@ let stats = {
     coinValueLevel: 1,
     hasMagnet: false,
     currentScore: 0,
-    currentShieldHp: 0,
     lastScore: 0,
     get laserDamage() { return 1 + (this.laserLevel - 1) * 0.5; },
     get missileCooldownTime() { return this.missileLevel > 0 ? Math.max(10, 90 - (this.missileLevel - 1) * 10) : Infinity; },
@@ -222,7 +219,7 @@ let audioSettings = { volume: -10, mute: false };
 
 function getUpgradeCost(base, lvl) { return Math.floor(base * Math.pow(1.5, lvl - 1)); }
 function getShieldCost(lvl) { return Math.floor(25 * Math.pow(4, lvl));}
-function saveStats() { localStorage.setItem(SAVE_KEY, JSON.stringify(stats)); hasUnsavedProgress = false;}
+function saveStats() { localStorage.setItem(SAVE_KEY, JSON.stringify(stats)); }
 function loadStats() { const s = localStorage.getItem(SAVE_KEY); if(s) stats = {...stats, ...JSON.parse(s)}; }
 function saveAudioSettings() { localStorage.setItem('rogueFlapAudio_v22', JSON.stringify(audioSettings)); }
 function loadAudioSettings() { const s = localStorage.getItem('rogueFlapAudio_v22'); if(s) audioSettings = {...audioSettings, ...JSON.parse(s)}; }
@@ -592,7 +589,7 @@ class Player {
     draw(ctx) { 
         if(this.invincible&&Math.floor(frame/3)%2===0)return;ctx.save();ctx.translate(this.x+this.width/2,this.y+this.height/2+Math.sin(this.idleBob)*1.5);ctx.rotate(this.angle);ctx.shadowColor='#00ffff';ctx.shadowBlur=15;if(this.flapCooldown>0){const e=(this.flapCooldown/10)*18,g=ctx.createRadialGradient(0,0,0,0,0,e);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.2,'rgba(0,255,255,.7)');g.addColorStop(1,'rgba(0,255,255,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(-this.width*.7,0,e,0,Math.PI*2);ctx.fill();}
         ctx.fillStyle=this.invincible?'#ff00ff':'#00ffff';ctx.beginPath();ctx.moveTo(-this.width/2,-this.height/2);ctx.lineTo(this.width/2,0);ctx.lineTo(-this.width/2,this.height/2);ctx.closePath();ctx.fill();ctx.fillStyle='#ffffff';ctx.shadowBlur=5;ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();ctx.restore();
-    if (this.shieldHp > 0) {
+        if (this.shieldHp > 0) {
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
     const radius = this.width * 0.75;
@@ -630,6 +627,7 @@ class Player {
 
     ctx.restore();
 }
+
     }
     flap() { this.vy = -BASE_FLAP_POWER; this.flapCooldown = 10; triggerScreenShake(2, 5); }
     shoot() {
