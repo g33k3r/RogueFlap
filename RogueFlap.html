@@ -592,19 +592,44 @@ class Player {
     draw(ctx) { 
         if(this.invincible&&Math.floor(frame/3)%2===0)return;ctx.save();ctx.translate(this.x+this.width/2,this.y+this.height/2+Math.sin(this.idleBob)*1.5);ctx.rotate(this.angle);ctx.shadowColor='#00ffff';ctx.shadowBlur=15;if(this.flapCooldown>0){const e=(this.flapCooldown/10)*18,g=ctx.createRadialGradient(0,0,0,0,0,e);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.2,'rgba(0,255,255,.7)');g.addColorStop(1,'rgba(0,255,255,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(-this.width*.7,0,e,0,Math.PI*2);ctx.fill();}
         ctx.fillStyle=this.invincible?'#ff00ff':'#00ffff';ctx.beginPath();ctx.moveTo(-this.width/2,-this.height/2);ctx.lineTo(this.width/2,0);ctx.lineTo(-this.width/2,this.height/2);ctx.closePath();ctx.fill();ctx.fillStyle='#ffffff';ctx.shadowBlur=5;ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();ctx.restore();
-        if(this.shieldHp > 0){
-            const shieldColors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00'];
-            const color = this.shieldHp >= 5 ? `hsl(${frame * 3}, 100%, 50%)` : shieldColors[this.shieldHp - 1];
-            ctx.save();
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2 + Math.sin(frame * 0.1) * 1;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = 20;
-            ctx.beginPath();
-            ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width * 0.7, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.restore();
-        }
+    if (this.shieldHp > 0) {
+    const centerX = this.x + this.width / 2;
+    const centerY = this.y + this.height / 2;
+    const radius = this.width * 0.75;
+
+    // Define colors per shield level
+    const shieldColors = ['rgba(255,0,0,1)', 'rgba(255,127,0,1)', 'rgba(255,255,0,1)', 'rgba(0,255,0,1)', 'rgba(0,255,255,1)'];
+    const color = this.shieldHp >= 5 ? `hsl(${frame * 3 % 360}, 100%, 50%)` : shieldColors[this.shieldHp - 1];
+
+    ctx.save();
+
+    // --- 1. Glowing Aura Background ---
+    const auraGradient = ctx.createRadialGradient(centerX, centerY, radius * 0.3, centerX, centerY, radius + 15);
+    auraGradient.addColorStop(0, color.replace('1)', '0.6)'));
+    auraGradient.addColorStop(1, color.replace('1)', '0.0)'));
+
+    ctx.fillStyle = auraGradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius + 15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // --- 2. Shield Ring with Pulse ---
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 25;
+
+    const ringGradient = ctx.createRadialGradient(centerX, centerY, radius * 0.5, centerX, centerY, radius);
+    ringGradient.addColorStop(0, 'white');
+    ringGradient.addColorStop(1, color);
+
+    ctx.strokeStyle = ringGradient;
+    ctx.lineWidth = 6 + Math.sin(frame * 0.2) * 2;
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+}
     }
     flap() { this.vy = -BASE_FLAP_POWER; this.flapCooldown = 10; triggerScreenShake(2, 5); }
     shoot() {
