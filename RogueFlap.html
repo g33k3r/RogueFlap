@@ -542,92 +542,106 @@ class Player {
         this.bossLives = 3; this.shootCooldown = 0; this.missileCooldown = 0;
         this.transitionStage = ''; this.vx = 0;
     }
+    
+    // =================================================================================
+    // FIXED: Player.update method
+    // This function now correctly handles the post-boss transition logic,
+    // creating the particle burst only ONCE to prevent the game from freezing.
+    // =================================================================================
     update() {
-    if(gameState === 'POST_BOSS_TRANSITION'){
-        this.y += this.vy;
-        if(this.transitionStage === 'returning') {
-            const targetX = 60;
-            this.x += (targetX - this.x) * 0.05;
-            // This now ONLY handles the stage transition.
-            if(Math.abs(this.x - targetX) < 1) {
-                this.transitionStage = 'launching';
-                this.vx = 15;
-                this.vy = -2;
+        if(gameState === 'POST_BOSS_TRANSITION'){
+            this.y += this.vy;
+            if(this.transitionStage === 'returning') {
+                const targetX = 60;
+                this.x += (targetX - this.x) * 0.05;
+
+                // Check if the ship has returned to its starting position
+                if(Math.abs(this.x - targetX) < 1) {
+                    this.transitionStage = 'launching'; // Change stage to launching
+                    this.vx = 15; // Set launch speed
+                    this.vy = -2; // Make the ship fly up slightly
+
+                    // Create the particle burst ONCE upon launching
+                    for(let i=0; i<100; i++) {
+                        particles.push(new Particle(this.x, this.y + this.height/2, '#00ffff', Math.random()*3+1, 30));
+                    }
+                }
+            } else if (this.transitionStage === 'launching') {
+                // If launching, just move the ship
+                this.x += this.vx;
             }
-        } else if (this.transitionStage === 'launching') {
-            this.x += this.vx;
+            return; // IMPORTANT: Exit the function to prevent normal game logic from running
         }
-        return; // This is important to skip the rest of the normal player logic
+
+        // --- The rest of the original update function from this point down remains unchanged ---
+        if (this.gravityActive) {
+             this.vy += (gameState === 'BOSS' ? 0.1 : BASE_GRAVITY);
+        }
+        this.y += this.vy;
+        this.angle = this.vy * 0.05;
+        if(gameState !== 'POST_BOSS_TRANSITION') {
+            if (this.y + this.height > GAME_HEIGHT) { this.y = GAME_HEIGHT - this.height; }
+            if (this.y < 0) { this.y = 0; }
+        }
+        
+        if (this.invincibleTimer > 0) this.invincibleTimer--; else this.invincible = false;
+        if (this.flapCooldown > 0) this.flapCooldown--;
+        if (this.shootCooldown > 0) this.shootCooldown--;
+        if (this.missileCooldown > 0) this.missileCooldown--;
+        this.idleBob += 0.1;
+
+        if(gameState === 'BOSS_TRANSITION') {
+            const targetX = GAME_WIDTH - 80;
+            this.x += (targetX - this.x) * 0.05;
+        }
+
+        if (gameState === 'BOSS' && stats.missileLevel > 0 && this.missileCooldown <= 0) {
+            missiles.push(new Missile(this.x, this.y + this.height/2));
+            this.missileCooldown = stats.missileCooldownTime;
+        }
     }
 
-    if (this.gravityActive) {
-         this.vy += (gameState === 'BOSS' ? 0.1 : BASE_GRAVITY);
-    }
-    this.y += this.vy;
-    this.angle = this.vy * 0.05;
-    if(gameState !== 'POST_BOSS_TRANSITION') {
-        if (this.y + this.height > GAME_HEIGHT) { this.y = GAME_HEIGHT - this.height; }
-        if (this.y < 0) { this.y = 0; }
-    }
-
-    if (this.invincibleTimer > 0) this.invincibleTimer--; else this.invincible = false;
-    if (this.flapCooldown > 0) this.flapCooldown--;
-    if (this.shootCooldown > 0) this.shootCooldown--;
-    if (this.missileCooldown > 0) this.missileCooldown--;
-    this.idleBob += 0.1;
-
-    if(gameState === 'BOSS_TRANSITION') {
-        const targetX = GAME_WIDTH - 80;
-        this.x += (targetX - this.x) * 0.05;
-    }
-
-    if (gameState === 'BOSS' && stats.missileLevel > 0 && this.missileCooldown <= 0) {
-        missiles.push(new Missile(this.x, this.y + this.height/2));
-        this.missileCooldown = stats.missileCooldownTime;
-    }
-}
     draw(ctx) { 
         if(this.invincible&&Math.floor(frame/3)%2===0)return;ctx.save();ctx.translate(this.x+this.width/2,this.y+this.height/2+Math.sin(this.idleBob)*1.5);ctx.rotate(this.angle);ctx.shadowColor='#00ffff';ctx.shadowBlur=15;if(this.flapCooldown>0){const e=(this.flapCooldown/10)*18,g=ctx.createRadialGradient(0,0,0,0,0,e);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.2,'rgba(0,255,255,.7)');g.addColorStop(1,'rgba(0,255,255,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(-this.width*.7,0,e,0,Math.PI*2);ctx.fill();}
         ctx.fillStyle=this.invincible?'#ff00ff':'#00ffff';ctx.beginPath();ctx.moveTo(-this.width/2,-this.height/2);ctx.lineTo(this.width/2,0);ctx.lineTo(-this.width/2,this.height/2);ctx.closePath();ctx.fill();ctx.fillStyle='#ffffff';ctx.shadowBlur=5;ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();ctx.restore();
         if (this.shieldHp > 0) {
-    const centerX = this.x + this.width / 2;
-    const centerY = this.y + this.height / 2;
-    const radius = this.width * 0.75;
+            const centerX = this.x + this.width / 2;
+            const centerY = this.y + this.height / 2;
+            const radius = this.width * 0.75;
 
-    // Define colors per shield level
-    const shieldColors = ['rgba(255,0,0,1)', 'rgba(255,127,0,1)', 'rgba(255,255,0,1)', 'rgba(0,255,0,1)', 'rgba(0,255,255,1)'];
-    const color = this.shieldHp >= 5 ? `hsl(${frame * 3 % 360}, 100%, 50%)` : shieldColors[this.shieldHp - 1];
+            // Define colors per shield level
+            const shieldColors = ['rgba(255,0,0,1)', 'rgba(255,127,0,1)', 'rgba(255,255,0,1)', 'rgba(0,255,0,1)', 'rgba(0,255,255,1)'];
+            const color = this.shieldHp >= 5 ? `hsl(${frame * 3 % 360}, 100%, 50%)` : shieldColors[this.shieldHp - 1];
 
-    ctx.save();
+            ctx.save();
 
-    // --- 1. Glowing Aura Background ---
-    const auraGradient = ctx.createRadialGradient(centerX, centerY, radius * 0.3, centerX, centerY, radius + 15);
-    auraGradient.addColorStop(0, color.replace('1)', '0.6)'));
-    auraGradient.addColorStop(1, color.replace('1)', '0.0)'));
+            // --- 1. Glowing Aura Background ---
+            const auraGradient = ctx.createRadialGradient(centerX, centerY, radius * 0.3, centerX, centerY, radius + 15);
+            auraGradient.addColorStop(0, color.replace('1)', '0.6)'));
+            auraGradient.addColorStop(1, color.replace('1)', '0.0)'));
 
-    ctx.fillStyle = auraGradient;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius + 15, 0, Math.PI * 2);
-    ctx.fill();
+            ctx.fillStyle = auraGradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius + 15, 0, Math.PI * 2);
+            ctx.fill();
 
-    // --- 2. Shield Ring with Pulse ---
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 25;
+            // --- 2. Shield Ring with Pulse ---
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 25;
 
-    const ringGradient = ctx.createRadialGradient(centerX, centerY, radius * 0.5, centerX, centerY, radius);
-    ringGradient.addColorStop(0, 'white');
-    ringGradient.addColorStop(1, color);
+            const ringGradient = ctx.createRadialGradient(centerX, centerY, radius * 0.5, centerX, centerY, radius);
+            ringGradient.addColorStop(0, 'white');
+            ringGradient.addColorStop(1, color);
 
-    ctx.strokeStyle = ringGradient;
-    ctx.lineWidth = 6 + Math.sin(frame * 0.2) * 2;
+            ctx.strokeStyle = ringGradient;
+            ctx.lineWidth = 6 + Math.sin(frame * 0.2) * 2;
 
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.stroke();
 
-    ctx.restore();
-}
-
+            ctx.restore();
+        }
     }
     flap() { this.vy = -BASE_FLAP_POWER; this.flapCooldown = 10; triggerScreenShake(2, 5); }
     shoot() {
@@ -753,7 +767,7 @@ class Boss {
     takeDamage(damage) {
         this.hp -= damage; triggerScreenShake(2, 5);
         for(let i=0; i<5; i++) particles.push(new Particle(this.x + (Math.random()-.5)*this.size*2, this.y + (Math.random()-.5)*this.size*2, '#ffffff', Math.random()*3+1, 20));
-        if (this.hp <= 0) { Fight(); }
+        if (this.hp <= 0) { endBossFight(); }
     }
 }
 
@@ -793,13 +807,18 @@ function startBossFight() {
     triggerScreenShake(15, 20);
 }
 
+// =================================================================================
+// FIXED: endBossFight function
+// The line `stats.currentShieldHp = player.shieldHp;` has been removed.
+// This prevents the game from saving the player's shield health at the end of a
+// fight, which was causing the shield upgrade to be ignored.
+// =================================================================================
 function endBossFight() {
     triggerScreenShake(25, 30);
     stats.currentScore = score + 1;
     stats.totalCoins += 100;
     floatingTexts.push(new FloatingText(boss.x, boss.y, "+100", '#ffff00'));
     for(let i=0; i<200; i++) particles.push(new Particle(boss.x, boss.y, '#ff007f', Math.random() * 6, 100));
-    // The incorrect line that saved shield HP is removed.
     saveStats();
     boss = null;
     gameState = 'POST_BOSS_TRANSITION';
@@ -833,19 +852,20 @@ function handleBossTransitionState() {
     }
 }
 
+// =================================================================================
+// FIXED: handlePostBossTransitionState function
+// This function is now simplified. It calls the player's update method (which
+// contains the corrected logic) and only checks for the final condition to
+// transition to the upgrade screen. This removes the buggy, duplicated code.
+// =================================================================================
 function handlePostBossTransitionState() {
-    // This is the new logic to create particles only ONCE.
-    if (player.transitionStage === 'returning' && Math.abs(player.x - 60) < 1.1) {
-        // Create the particle burst as the ship prepares to launch
-        for(let i=0; i<100; i++) {
-            particles.push(new Particle(player.x, player.y + player.height/2, '#00ffff', Math.random()*3+1, 30));
-        }
-    }
-
+    // These functions will now handle all the visual updates correctly
     player.update();
     handleCollectiblesLogic();
     player.draw(ctx);
 
+    // This is now the ONLY check in this function.
+    // When the player flies off-screen, go to the upgrade menu.
     if (player.transitionStage === 'launching' && player.x > GAME_WIDTH + player.width) {
         gameState = 'UPGRADE';
         updateMusicByGameState();
@@ -1034,9 +1054,14 @@ function resetGame() {
     screenShake = { intensity: 0, duration: 0 };
 }
 
+// =================================================================================
+// FIXED: startRound function
+// The logic has been simplified to always set the player's shield health to the
+// current `stats.shieldLevel`. This ensures that any purchased upgrades are
+// immediately applied at the start of the next round.
+// =================================================================================
 function startRound() {
     resetGame();
-    // This correctly sets your shield to the upgraded level every time.
     player.shieldHp = stats.shieldLevel;
     score = stats.currentScore;
     player.y = GAME_HEIGHT / 2 - player.height / 2;
